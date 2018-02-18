@@ -19,7 +19,7 @@
 
 #define	 MY_PORT  7777
 
-void draw(int y,int x);
+
 /* ---------------------------------------------------------------------
    This is a sample client program for the number server. The client and
    the server need to run on the same machine.
@@ -31,6 +31,9 @@ struct playerPosition{
 	int y;
 };
 
+void draw(int y,int x,struct playerPosition *player,WINDOW* window,int height,int width);
+
+void drawScreen(WINDOW* win,int height,int width);
 
 int main()
 {	
@@ -68,15 +71,25 @@ int main()
 		exit (1);
 	}
 
-	while(1){
-    player = malloc(sizeof(struct playerPosition));
-
-	recv(s,player,sizeof(struct playerPosition),0);
 	initscr();
 	cbreak();
-	draw(player->y,player->x);
-	player->x  +=1;
-	player->y +=1;
+	int height,width,start_y,start_x;
+	height=width=12;
+	start_y = start_x =10;
+	WINDOW* win = newwin(height,width,start_y,start_x);
+	refresh();
+	
+	drawScreen(win,height,width);
+	while(1){
+    	player = malloc(sizeof(struct playerPosition));
+
+	recv(s,player,sizeof(struct playerPosition),0);
+	
+	wclear(win);
+	
+	drawScreen(win,height,width);
+	draw(player->y,player->x,player,win,height,width);
+
 	send(s,player,sizeof(struct playerPosition),0);
 
    // printf("\nplayer id: %d\nx: %d \ny: %d\n",player->id,player->x,player->y);
@@ -88,24 +101,95 @@ int main()
 	close (s);
 }
 
-
-void draw(int y,int x){
-	int height,width,start_y,start_x;
-	height=width=10;
-	start_y = start_x =10;
-	WINDOW* win = newwin(height,width,start_y,start_x);
-	refresh();
+void drawScreen(WINDOW* win,int height,int width){
 	char lr = '|';
 	char tb = '-';
 	box(win,(int)lr,(int)tb);
 	refresh();
 	wrefresh(win);
+
 	mvwprintw(win,0,0,"+");
-	mvwprintw(win,0,9,"+");
-	mvwprintw(win,9,0,"+");
-	mvwprintw(win,9,9,"+");
+	mvwprintw(win,0,height-1,"+");
+	mvwprintw(win,width-1,0,"+");
+	mvwprintw(win,width-1,height-1,"+");
 	wrefresh(win);
-	mvwprintw(win,y,x,">");
+}
+
+// void draw(int y,int x,struct playerPosition *player,WINDOW* win,int height, int width){
+// 	char *direction,*p;
+// 	direction = malloc(sizeof(char)*5);
+	
+// 	strcpy(direction,"?");
+
+// 	mvwprintw(win,y,x,direction);
+// 	wrefresh(win);
+	
+// 	keypad(win,true);
+// 	int c = wgetch(win);
+// 	switch(c){
+// 		case KEY_UP:
+// 			if(player->y>1)
+// 			player->y-=1;
+// 			*p = "^";
+// 			break;
+// 		case KEY_DOWN:
+// 			if(player->y<height-2)
+// 			player->y+=1;
+// 			*p = "v";
+// 			break;
+// 		case KEY_LEFT:
+// 			if(player->x>1)
+// 			player->x-=1;
+// 			*p="<";
+// 			break;
+// 		case KEY_RIGHT:
+// 			if(player->x<width-2)
+// 			player->x+=1;
+// 			*p = ">";
+// 			break;	
+// 	}
+
+// 	wrefresh(win);
+// 	mvwprintw(win,y,x,direction);
+// 	wrefresh(win);
+// 	free(direction);
+// }
+void draw(int y,int x,struct playerPosition *player,WINDOW* win,int height, int width){
+	char *direction;
+	direction = malloc(sizeof(char)*5);
+	
+	strcpy(direction,"?");
+
+	mvwprintw(win,y,x,direction);
 	wrefresh(win);
-	getch();
+	
+	keypad(win,true);
+	int c = wgetch(win);
+	switch(c){
+		case KEY_UP:
+			if(player->y>1)
+			player->y-=1;
+				strcpy(direction,"^");
+			break;
+		case KEY_DOWN:
+			if(player->y<height-2)
+			player->y+=1;
+				strcpy(direction,"v");
+			break;
+		case KEY_LEFT:
+			if(player->x>1)
+			player->x-=1;
+				strcpy(direction,"<");
+			break;
+		case KEY_RIGHT:
+			if(player->x<width-2)
+			player->x+=1;
+				strcpy(direction,">");
+			break;	
+	}
+
+	wrefresh(win);
+	mvwprintw(win,y,x,direction);
+	wrefresh(win);
+	free(direction);
 }
