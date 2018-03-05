@@ -17,10 +17,6 @@
 #include <ncurses.h>
 #include <time.h>
 
-#define	 MY_PORT  7777
-
-#define HEIGHT 12
-#define WIDTH 12
 #define START_Y 10
 #define START_X 10
 /* ---------------------------------------------------------------------
@@ -29,12 +25,16 @@
    --------------------------------------------------------------------- */
 
 struct playerPosition{
+    int boardsize;
+    double updatePeriod;
+    int MY_PORT;
+    int seed;
     int *new_sock;
-	int id;
-	int x;
-	int y;
-	char direction[2];
-	char move;
+    int id;
+    int x;
+    int y;
+    char direction[2];
+    char move;
 };
 
 void changePosition(struct playerPosition *player,WINDOW* win);
@@ -42,8 +42,8 @@ void changePosition(struct playerPosition *player,WINDOW* win);
 void drawScreen(WINDOW* win,struct playerPosition *player);
 
 
-int main()
-{	
+int main(int argc, char * argv[])
+{
 
 	int	s, number;
     struct playerPosition *player;
@@ -53,7 +53,7 @@ int main()
 
 	host = gethostbyname ("localhost");
 
-	
+
 
 	if (host == NULL) {
 		perror ("Client: cannot get host description");
@@ -70,50 +70,46 @@ int main()
 
 	bzero (&server, sizeof (server));
 	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = inet_addr("127.0.0.1");
-	server.sin_port = htons (MY_PORT);
-
+	server.sin_addr.s_addr = inet_addr(argv[1]);
+	server.sin_port = htons (atoi(argv[2]));
 	if (connect (s, (struct sockaddr*) & server, sizeof (server))) {
 		perror ("Client: cannot connect to server");
 		exit (1);
 	}
 
-
 	initscr();
 	cbreak();
-	
-	WINDOW* win = newwin(HEIGHT,WIDTH,START_Y,START_X);
-	refresh();
+	int a = 0;
 
 
-
+ WINDOW *win;
 	while(1){
     	player = malloc(sizeof(struct playerPosition));
 
-	recv(s,player,sizeof(struct playerPosition),0);
-	// full contents with x, y , direction
-	player->move = '?';
-	drawScreen(win,player);
+		recv(s,player,sizeof(struct playerPosition),0);
+		if (a==0){
+            win = newwin(player->boardsize,player->boardsize,START_Y,START_X);
+        }
+        a=1;
+		// full contents with x, y , direction
+		player->move = '?';
+		drawScreen(win,player);
         unsigned int reTime = time(0) +1;
-        while (time(0)<reTime){
-	
-	changePosition(player,win);
-	}
-	
-		
+         while (time(0)<reTime){
+
+		 	changePosition(player,win);
+		 }
+
         // player only contains new move direction
-	send(s,player,sizeof(struct playerPosition),0);
+		send(s,player,sizeof(struct playerPosition),0);
 
-   
-	
-
-    free(player);
+    	free(player);
 	}
 	close (s);
 }
 
 void drawScreen(WINDOW* win,struct playerPosition *player){
-	wclear(win);	
+	wclear(win);
 	char lr = '|';
 	char tb = '-';
 	box(win,(int)lr,(int)tb);
@@ -121,10 +117,10 @@ void drawScreen(WINDOW* win,struct playerPosition *player){
 	wrefresh(win);
 
 	mvwprintw(win,0,0,"+");
-	mvwprintw(win,0,HEIGHT-1,"+");
-	mvwprintw(win,WIDTH-1,0,"+");
-	mvwprintw(win,WIDTH-1,HEIGHT-1,"+");
-        strcat(player->direction,"\0");
+	mvwprintw(win,0,player->boardsize-1,"+");
+	mvwprintw(win,player->boardsize-1,0,"+");
+	mvwprintw(win,player->boardsize-1,player->boardsize-1,"+");
+	strcat(player->direction,"\0");
 	mvwprintw(win,player->y,player->x,player->direction);
 	wrefresh(win);
 }
@@ -136,32 +132,28 @@ void changePosition(struct playerPosition *player,WINDOW* win){
 	int c = wgetch(win);
 	switch(c){
 		case KEY_UP:
-			
-	//		if(player->y>1)
-	//		player->y-=1;
+
+
 			player->move='^';
-		
+
 			break;
 		case KEY_DOWN:
-	//		if(player->y<HEIGHT-2)
-	//		player->y+=1;
+
 			player->move='v';
 			break;
 		case KEY_LEFT:
-	//		if(player->x>1)
-	//		player->x-=1;
+
 			player->move='<';
 			break;
 		case KEY_RIGHT:
-	//		if(player->x<WIDTH-2)
-	//		player->x+=1;
-			player->move='>';
-			break;	
-	}
-	
-	
 
-	
+			player->move='>';
+			break;
+	}
+
+
+
+
 }
 
 
