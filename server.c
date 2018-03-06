@@ -52,7 +52,6 @@ void *connection_handler(void *player1)
         // the switch statment below should check all constraint of all the clients,
         // and do the update
     printf("sock %d, is nth %d \n",sock,nth);
-    printf("move is %d\n",allplayers->players[nth].move);
  switch(allplayers->players[nth].move){
         case '^':
 
@@ -83,6 +82,7 @@ void *connection_handler(void *player1)
             }
             break;
     }
+      printf("x,y %d %d\n",allplayers->players[0].x,allplayers->players[0].y);
 
         send(sock,allplayers,sizeof(struct allplayer),0);
 	}
