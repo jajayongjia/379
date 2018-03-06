@@ -16,7 +16,7 @@
 #include <arpa/inet.h>
 #include <ncurses.h>
 #include <time.h>
-
+#include <sys/timeb.h>
 #define START_Y 10
 #define START_X 10
 /* ---------------------------------------------------------------------
@@ -48,7 +48,7 @@ struct allplayer{
     struct playerPosition players[30];
     int currentIndex;
 };
-char changePosition(WINDOW* win);
+char changePosition(WINDOW* win,int period);
 
 void drawScreen(WINDOW* win,struct playerPosition player[30],int current);
 
@@ -61,6 +61,7 @@ int main(int argc, char * argv[])
 	struct	sockaddr_in	server;
 	int ID,n;
 	int a=0;
+	int updatep;
 	struct	hostent		*host;
 
 	host = gethostbyname ("localhost");
@@ -92,6 +93,7 @@ int main(int argc, char * argv[])
 	initscr();
 	cbreak();
     WINDOW *win;
+    struct timeb t_start,t_current,readtime;
 	while(recv(s,&allplayers,sizeof(struct allplayer),0)){
 
 		//printf("%d\n",allplayers->players[0].boardsize);
@@ -101,43 +103,41 @@ int main(int argc, char * argv[])
         if (a==0){
             win = newwin(allplayers.players[0].boardsize,allplayers.players[0].boardsize,START_Y,START_X);
             refresh();
-//
-//            for (n=0;n<30;){
-//                    if(allplayers->players[n].exist==1){
-//                        n++;
-//                    }
-//                    else{
-//                        break;
-//                    }
-//
-//
-//                    }
-//            i=n;
+             updatep =(int) (allplayers.players[0].updatePeriod * 1000.0);
+             updatep = 1000;
+
          }
         a=1;
         ID = allplayers.currentIndex;
-        printw("id is %d\n",ID);
-        refresh();
-		// full contents with x, y , direction
-		allplayers.players[ID].move = '?';
+
 
 		drawScreen(win,allplayers.players,ID);
+        int moves[10],i=0;
 
 
+        ftime(&t_start);
+        do{
+        ftime(&readtime);
+        moves[i++] = changePosition(win,updatep - ((int) (1000.0 * (readtime.time - t_start.time)
+        + (readtime.millitm - t_start.millitm))));
 
-        unsigned int reTime = time(0)+1;
-        while(time(0)<reTime){
-            allplayers.players[ID].move = changePosition(win);
+        ftime(&t_current);
+        } while ((int) (1000.0 * (t_current.time - t_start.time)
+        + (t_current.millitm - t_start.millitm)) < updatep);
+
+        for (i = 0; i<10; i++){
+            if(moves[i] == -1){
+                if (i == 0){
+                    allplayers.players[ID].move = '?';
+                }
+                else{
+                    allplayers.players[ID].move = (char) moves[i-1];
+                }
+            }
         }
-//		long long t1 = current_time();
-//		long long t2 = t1+allplayers->players[i].updatePeriod*1000;
-//		while(current_time()<t2){
-//			changePosition(&(allplayers->players[i]),win);
-//		}
-        // player only contains new move direction
 
-//        printw("1 %d \n",allplayers->players[0].move);
-//	    refresh();
+        printw("%d\n", allplayers.players[ID].move);
+        refresh();
 
 		send(s,&allplayers,sizeof(struct allplayer),0);
 
@@ -166,6 +166,8 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current){
 	for(int i=0;i<30;i++){
         if (player[i].exist == 1){
         strcat(player[i].direction,"\0");
+        // bool your char!!!
+        /***************************************/
 		mvwprintw(win,player[i].y,player[i].x,player[i].direction);
 	}
 	}
@@ -174,14 +176,15 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current){
 }
 
 
-char changePosition(WINDOW* win){
+char changePosition(WINDOW* win,int period){
 	keypad(win,true);
-
+//    notimeout(win,true);
+    wtimeout(win,period);
+//   printw("time left is %d\n",period);
+//        refresh();
 	int c = wgetch(win);
 	switch(c){
 		case KEY_UP:
-
-
 			return '^';
 
 			break;
@@ -194,7 +197,6 @@ char changePosition(WINDOW* win){
 			return '<';
 			break;
 		case KEY_RIGHT:
-
 			return '>';
 			break;
 	}
