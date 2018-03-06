@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
+#include <sys/timeb.h> //FD_SET, FD_ISSET, FD_ZERO macros
 #include <netinet/in.h>
 #include<pthread.h>
 #define START_Y 10
@@ -36,55 +36,78 @@ struct allplayer{
     struct playerPosition players[30];
     int currentIndex;
 };
+pthread_mutex_t lock;
+struct allplayer allplayers;
+struct timeb currentTime;
+
+
 void *connection_handler(void *player1)
 {
     //Get the socket descriptor
-    struct allplayer *allplayers;
-    allplayers =(struct allplayer*) player1;
-    int nth = allplayers->currentIndex;
+//    allplayers =(struct allplayer *)(player1);
+    int nth = *(int *) player1;
+    struct timeb now;
+    int sock = *(allplayers.players[nth].new_sock);
 
 
-    int sock = *(allplayers->players[nth].new_sock);
-    send(sock,allplayers,sizeof(struct allplayer),0);
+
+
+    allplayers.currentIndex = nth;
+    send(sock,&allplayers,sizeof(struct allplayer),0);
     	// Now we receive from the client,
-	while (recv(sock,allplayers,sizeof(struct allplayer),0)){
+	while (1){
+                pthread_mutex_lock(&lock);
+                printf("client nth %d locked \n",nth);
+             recv(sock,&allplayers,sizeof(struct allplayer),0);
+             printf("client nth %d unlocked \n",nth);
+             pthread_mutex_unlock(&lock);
+
 
         // the switch statment below should check all constraint of all the clients,
         // and do the update
-    printf("sock %d, is nth %d \n",sock,nth);
- switch(allplayers->players[nth].move){
+ switch(allplayers.players[nth].move){
         case '^':
 
-            if(allplayers->players[nth].y > 1){
-                allplayers->players[nth].y-=1;
-                strcpy(allplayers->players[nth].direction,"^");
+            if(allplayers.players[nth].y > 1){
+                allplayers.players[nth].y-=1;
+                strcpy(allplayers.players[nth].direction,"^");
             }
             break;
         case 'v':
 
-            if((allplayers->players[nth].y) < (allplayers->players[nth].boardsize-2) ){
-                allplayers->players[nth].y+=1;
-                strcpy(allplayers->players[nth].direction,"v");
+            if((allplayers.players[nth].y) < (allplayers.players[nth].boardsize-2) ){
+                allplayers.players[nth].y+=1;
+                strcpy(allplayers.players[nth].direction,"v");
             }
             break;
         case '<':
 
-            if(allplayers->players[nth].x > 1){
-                allplayers->players[nth].x-=1;
-                strcpy(allplayers->players[nth].direction,"<");
+            if(allplayers.players[nth].x > 1){
+                allplayers.players[nth].x-=1;
+                strcpy(allplayers.players[nth].direction,"<");
             }
             break;
         case '>':
 
-            if((allplayers->players[nth].x) < (allplayers->players[nth].boardsize-2)){
-                allplayers->players[nth].x+=1;
-                strcpy(allplayers->players[nth].direction,">");
+            if((allplayers.players[nth].x) < (allplayers.players[nth].boardsize-2)){
+                allplayers.players[nth].x+=1;
+                strcpy(allplayers.players[nth].direction,">");
             }
             break;
     }
-      printf("x,y %d %d\n",allplayers->players[0].x,allplayers->players[0].y);
 
-        send(sock,allplayers,sizeof(struct allplayer),0);
+        printf("x,y %d %d\n",allplayers.players[0].x,allplayers.players[0].y);
+//        pthread_mutex_lock(&lock);
+//        pthread_mutex_lock(&lock);
+//        printf("client nth %d locked \n",nth);
+        allplayers.currentIndex = nth;
+        send(sock,&allplayers,sizeof(struct allplayer),0);
+//        do{
+//                ftime(&now);
+//
+//        }while((currentTime.millitm - now.millitm)<200);
+//        currentTime = now;
+
 	}
 
 
@@ -98,12 +121,16 @@ int main(int argc, char * argv[])
 	int client_socket[30] , max_clients = 30, sd , max_sd,activity;
 	struct	sockaddr_in	master;
 	pthread_t thread_id;
-    struct playerPosition *players[max_clients];
-    struct allplayer *allplayers;
-    allplayers = malloc(sizeof(struct allplayer));
 
 	char buffer[1025];
 	fd_set readfds;
+
+
+        if (pthread_mutex_init(&lock, NULL) != 0)
+    {
+        printf("\n mutex init has failed\n");
+        return 1;
+    }
 
     //initialise all client_socket[] to 0 so not checked
     for (i = 0; i < max_clients; i++)
@@ -186,6 +213,7 @@ int main(int argc, char * argv[])
 
             // puts("Welcome message sent successfully");
             pthread_t thread1;
+            int index;
           //  struct playerPosition *player1;
             //add new socket to array of sockets
             for (i = 0; i < max_clients; i++)
@@ -195,26 +223,26 @@ int main(int argc, char * argv[])
                 {
                     client_socket[i] = snew;
                     printf("Adding to list of sockets as %d\n" , i);
-            allplayers->players[i].exist = 1;
-           allplayers->players[i].new_sock = malloc(1);
-           allplayers->players[i].x = 2;
-            allplayers->players[i].y = 2;
-            allplayers->players[i].id = i;
-            allplayers->currentIndex = i;
-            strcpy(allplayers->players[i].direction,">");
-           allplayers->players[i].move = '?';
-           allplayers->players[i].boardsize = atoi(argv[1]);
-            allplayers->players[i].updatePeriod = atof(argv[2]);
-            allplayers->players[i].MY_PORT = atoi(argv[3]);
-            allplayers->players[i].seed = atoi(argv[4]);
-            *(allplayers->players[i].new_sock) = snew;
+            index = i;
+            allplayers.players[i].exist = 1;
+           allplayers.players[i].new_sock = malloc(1);
+           allplayers.players[i].x = 2;
+            allplayers.players[i].y = 2;
+            allplayers.players[i].id = i;
+            strcpy(allplayers.players[i].direction,">");
+           allplayers.players[i].move = '?';
+           allplayers.players[i].boardsize = atoi(argv[1]);
+            allplayers.players[i].updatePeriod = atof(argv[2]);
+            allplayers.players[i].MY_PORT = atoi(argv[3]);
+            allplayers.players[i].seed = atoi(argv[4]);
+            *(allplayers.players[i].new_sock) = snew;
 
                     break;
                 }
             }
+            ftime(&currentTime);
 
-
-        	if( pthread_create( &thread1 , NULL ,  connection_handler , (void*)allplayers) < 0)
+        	if( pthread_create( &thread1 , NULL ,  connection_handler , (void*)&index) < 0)
      		   {
             perror("could not create thread");
             return 1;
@@ -253,7 +281,7 @@ int main(int argc, char * argv[])
 
 }
 
-
+pthread_mutex_destroy(&lock);
  return 0;
 }
 
