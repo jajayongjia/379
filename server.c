@@ -56,11 +56,11 @@ void *connection_handler(void *player1)
     send(sock,&allplayers,sizeof(struct allplayer),0);
     	// Now we receive from the client,
 	while (1){
-                pthread_mutex_lock(&lock);
-                printf("client nth %d locked \n",nth);
+//                pthread_mutex_lock(&lock);
+//                printf("client nth %d locked \n",nth);
              recv(sock,&allplayers,sizeof(struct allplayer),0);
-             printf("client nth %d unlocked \n",nth);
-             pthread_mutex_unlock(&lock);
+//             printf("client nth %d unlocked \n",nth);
+//             pthread_mutex_unlock(&lock);
 
 
         // the switch statment below should check all constraint of all the clients,
