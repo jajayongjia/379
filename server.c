@@ -34,57 +34,52 @@ struct playerPosition{
 };
 struct allplayer{
     struct playerPosition players[30];
-
+    int currentIndex;
 };
-int currentIndex;
 void *connection_handler(void *player1)
 {
     //Get the socket descriptor
-//    struct playerPosition **currentPlayer;
     struct allplayer *allplayers;
     allplayers =(struct allplayer*) player1;
-//    for (int i = 0; i<30;i++){
-//        allplayers->players[i] = *currentPlayer[i];
-//        printf("%d\n",allplayers->players[i].boardsize);
-//    }
+    int nth = allplayers->currentIndex;
 
 
-    int sock = *(allplayers->players[currentIndex].new_sock);
-    //printf("%d\n",currentPlayer[0]->boardsize);
+    int sock = *(allplayers->players[nth].new_sock);
     send(sock,allplayers,sizeof(struct allplayer),0);
     	// Now we receive from the client,
 	while (recv(sock,allplayers,sizeof(struct allplayer),0)){
 
         // the switch statment below should check all constraint of all the clients,
         // and do the update
-//    printf("%d\n",allplayers->players[currentIndex].move);
- switch(allplayers->players[currentIndex].move){
+    printf("sock %d, is nth %d \n",sock,nth);
+    printf("move is %d\n",allplayers->players[nth].move);
+ switch(allplayers->players[nth].move){
         case '^':
 
-            if(allplayers->players[currentIndex].y > 1){
-                allplayers->players[currentIndex].y-=1;
-                strcpy(allplayers->players[currentIndex].direction,"^");
+            if(allplayers->players[nth].y > 1){
+                allplayers->players[nth].y-=1;
+                strcpy(allplayers->players[nth].direction,"^");
             }
             break;
         case 'v':
 
-            if((allplayers->players[currentIndex].y) < (allplayers->players[currentIndex].boardsize-2) ){
-                allplayers->players[currentIndex].y+=1;
-                strcpy(allplayers->players[currentIndex].direction,"v");
+            if((allplayers->players[nth].y) < (allplayers->players[nth].boardsize-2) ){
+                allplayers->players[nth].y+=1;
+                strcpy(allplayers->players[nth].direction,"v");
             }
             break;
         case '<':
 
-            if(allplayers->players[currentIndex].x > 1){
-                allplayers->players[currentIndex].x-=1;
-                strcpy(allplayers->players[currentIndex].direction,"<");
+            if(allplayers->players[nth].x > 1){
+                allplayers->players[nth].x-=1;
+                strcpy(allplayers->players[nth].direction,"<");
             }
             break;
         case '>':
 
-            if((allplayers->players[currentIndex].x) < (allplayers->players[currentIndex].boardsize-2)){
-                allplayers->players[currentIndex].x+=1;
-                strcpy(allplayers->players[currentIndex].direction,">");
+            if((allplayers->players[nth].x) < (allplayers->players[nth].boardsize-2)){
+                allplayers->players[nth].x+=1;
+                strcpy(allplayers->players[nth].direction,">");
             }
             break;
     }
@@ -105,6 +100,7 @@ int main(int argc, char * argv[])
 	pthread_t thread_id;
     struct playerPosition *players[max_clients];
     struct allplayer *allplayers;
+    allplayers = malloc(sizeof(struct allplayer));
 
 	char buffer[1025];
 	fd_set readfds;
@@ -199,13 +195,12 @@ int main(int argc, char * argv[])
                 {
                     client_socket[i] = snew;
                     printf("Adding to list of sockets as %d\n" , i);
-          //  allplayers->players[i]. = malloc(sizeof(struct playerPosition));
             allplayers->players[i].exist = 1;
            allplayers->players[i].new_sock = malloc(1);
            allplayers->players[i].x = 2;
             allplayers->players[i].y = 2;
             allplayers->players[i].id = i;
-            currentIndex = i;
+            allplayers->currentIndex = i;
             strcpy(allplayers->players[i].direction,">");
            allplayers->players[i].move = '?';
            allplayers->players[i].boardsize = atoi(argv[1]);

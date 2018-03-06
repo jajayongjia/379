@@ -46,7 +46,7 @@ struct playerPosition{
 };
 struct allplayer{
     struct playerPosition players[30];
-
+    int currentIndex;
 };
 char changePosition(WINDOW* win);
 
@@ -60,7 +60,7 @@ int main(int argc, char * argv[])
     struct playerPosition *player[30],*currentPlayer;
     struct allplayer *allplayers;
 	struct	sockaddr_in	server;
-	int i,n;
+	int ID,n;
 	int a=0;
 	struct	hostent		*host;
 
@@ -103,31 +103,33 @@ int main(int argc, char * argv[])
         if (a==0){
             win = newwin(allplayers->players[0].boardsize,allplayers->players[0].boardsize,START_Y,START_X);
             refresh();
-
-            for (n=0;n<30;){
-                    if(allplayers->players[n].exist==1){
-                        n++;
-                    }
-                    else{
-                        break;
-                    }
-
-
-                    }
-            i=n;
+//
+//            for (n=0;n<30;){
+//                    if(allplayers->players[n].exist==1){
+//                        n++;
+//                    }
+//                    else{
+//                        break;
+//                    }
+//
+//
+//                    }
+//            i=n;
          }
         a=1;
-
+        ID = allplayers->currentIndex;
+        printw("id is %d\n",ID);
+        refresh();
 		// full contents with x, y , direction
-		allplayers->players[i].move = '?';
+		allplayers->players[ID].move = '?';
 
-		drawScreen(win,allplayers->players,i);
+		drawScreen(win,allplayers->players,ID);
 
 
 
         unsigned int reTime = time(0)+1;
         while(time(0)<reTime){
-            allplayers->players[0].move = changePosition(win);
+            allplayers->players[ID].move = changePosition(win);
         }
 //		long long t1 = current_time();
 //		long long t2 = t1+allplayers->players[i].updatePeriod*1000;
