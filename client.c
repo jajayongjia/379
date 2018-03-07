@@ -101,26 +101,24 @@ int main(int argc, char * argv[])
     struct timeb t_start,t_current,readtime;
 	while(1){
 
-        refresh();
+
 
 
         struct playerPosition currentplayer;
         recv(s,&allplayers,sizeof(struct allplayer),0);
 
-        refresh();
 	    if (a==0){
             ID = allplayers.currentIndex;
             win = newwin(allplayers.players[0].boardsize+2,allplayers.players[0].boardsize+2,START_Y,START_X);
             refresh();
              updatep =(int) (allplayers.players[0].updatePeriod * 1000.0);
-//             updatep = 1000-50;
+
 
          }
         a=1;
 		drawScreen(win,allplayers.players,ID);
 
         refresh();
-
 
 
          char moves[5],i=0;
@@ -135,8 +133,8 @@ int main(int argc, char * argv[])
             }
             move = '?';
          }
-        printw("%d\n", move);
-refresh();
+//        printw("%d\n", move);
+//refresh();
 
 		send(s,&move,sizeof(char),0);
 	}
