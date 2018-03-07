@@ -25,29 +25,44 @@ struct playerPosition{
     double updatePeriod;
     int MY_PORT;
     int seed;
-    int *new_sock;
+    int new_sock;
     int id;
     int x;
     int y;
     char direction[2];
     char move;
+    int fire; // if fire == 1 -> draw o on screen
+    int o[4]; // contains x1,y1,x2,y2
+    int death; // 1 if this player is hit
+    int score; // 0 in default
 };
+
 struct allplayer{
     struct playerPosition players[30];
     int currentIndex;
 };
+
 pthread_mutex_t lock;
 struct allplayer allplayers;
 struct timeb currentTime;
 struct timeb t_start,t_current,readtime;
+void clearfireo(struct playerPosition * currentplayer){
+    currentplayer->fire = 0;
 
+    currentplayer->o[0] = -1;
+    currentplayer->o[1] = -1;
+    currentplayer->o[2] = -1;
+    currentplayer->o[3] = -1;
+
+
+}
 void *connection_handler(void *player1)
 {
     //Get the socket descriptor
     struct playerPosition currentplayer;
     currentplayer = *(struct playerPosition *)player1;
     int nth = currentplayer.id;
-    int sock = *(currentplayer.new_sock);
+    int sock = currentplayer.new_sock;
 
 
     struct timeb now;
@@ -67,15 +82,16 @@ void *connection_handler(void *player1)
         }
     t_start = t_current;
 //    printf("b%d",allplayers.players[1].id);
+
     allplayers.players[nth] = currentplayer;
     char move;
 
-
+    printf("ready to send");
     send(sock,&allplayers,sizeof(struct allplayer),0);
     	// Now we receive from the client,
-
+    printf("ready to recv");
     recv(sock,&move,sizeof( char),0);
-
+    printf("||recved||");
 
         // the switch statment below should check all constraint of all the clients,
         // and do the update
@@ -86,13 +102,15 @@ void *connection_handler(void *player1)
                 currentplayer.y-=1;
                 strcpy(currentplayer.direction,"^");
             }
+            clearfireo(&currentplayer);
             break;
         case 'v':
 
-            if((currentplayer.y) < (currentplayer.boardsize-2) ){
+            if((currentplayer.y) < (currentplayer.boardsize) ){
                 currentplayer.y+=1;
                 strcpy(currentplayer.direction,"v");
             }
+            clearfireo(&currentplayer);
             break;
         case '<':
 
@@ -100,19 +118,104 @@ void *connection_handler(void *player1)
                 currentplayer.x-=1;
                 strcpy(currentplayer.direction,"<");
             }
+            clearfireo(&currentplayer);
             break;
         case '>':
 
-            if((currentplayer.x) < (currentplayer.boardsize-2)){
+            if((currentplayer.x) < (currentplayer.boardsize)){
                 currentplayer.x+=1;
                 strcpy(currentplayer.direction,">");
             }
+            clearfireo(&currentplayer);
             break;
+
+    // enable currentplayer.fire ( =1);
+    // give o[4] to currentplayer
+    // do check fire range is in boundary or not
+    // also check if other clients current position is in o[4] or not
+    // if yes,  other_player.death = 1
+    // currentplayer.score +=1
+
+
+        case 'f':
+            currentplayer.fire = 1;
+            switch(currentplayer.direction[0]){
+                case '^':
+                    if(currentplayer.y==1){
+                        ;
+                    }
+                    else if(currentplayer.y==2){
+                        currentplayer.o[0] = currentplayer.x;
+                        currentplayer.o[1] = 1;
+                    }
+                    else{
+                        currentplayer.o[0] = currentplayer.x;
+                        currentplayer.o[1] = currentplayer.y-1;
+                        currentplayer.o[2] = currentplayer.x;
+                        currentplayer.o[3] = currentplayer.y-2;
+                    }
+                    break;
+                case 'v':
+                    if(currentplayer.y == currentplayer.boardsize){
+                        ;
+                    }
+                    else if(currentplayer.y == currentplayer.boardsize-1){
+                        currentplayer.o[0] = currentplayer.x;
+                        currentplayer.o[1] = currentplayer.boardsize-1;
+                    }
+                    else{
+
+                        currentplayer.o[0] = currentplayer.x;
+                        currentplayer.o[1] = currentplayer.y+1;
+                        currentplayer.o[2] = currentplayer.x;
+                        currentplayer.o[3] = currentplayer.y+2;
+                    }
+                    break;
+                case '<':
+                    if(currentplayer.x == 1){
+                        ;
+                    }
+                    else if(currentplayer.x == 2){
+                        currentplayer.o[0] = currentplayer.x-1;
+                        currentplayer.o[1] = currentplayer.y;
+                    }
+                    else{
+                        currentplayer.o[0] = currentplayer.x-1;
+                        currentplayer.o[1] = currentplayer.y;
+                        currentplayer.o[2] = currentplayer.x-2;
+                        currentplayer.o[3] = currentplayer.y;
+                    }
+                    break;
+                case '>':
+                    if(currentplayer.x == currentplayer.boardsize){
+                        ;
+                    }
+                    else if(currentplayer.x == currentplayer.boardsize-1){
+                        currentplayer.o[0] = currentplayer.x+1;
+                        currentplayer.o[1] = currentplayer.y;
+                    }
+                    else{
+                        currentplayer.o[0] = currentplayer.x+1;
+                        currentplayer.o[1] = currentplayer.y;
+                        currentplayer.o[2] = currentplayer.x+2;
+                        currentplayer.o[3] = currentplayer.y;
+                    }
+                    break;
+
+
+
+            }
+
+
+
+        break;
+        default :
+          clearfireo(&currentplayer);
     }
 	}
 
-//    printf("ss");
-//    pthread_exit("");
+    puts("connection down");
+    pthread_exit("");
 
 }
 int main(int argc, char * argv[])
@@ -219,7 +322,6 @@ int main(int argc, char * argv[])
                     printf("Adding to list of sockets as %d\n" , i);
             currentplayer.id = i;
             currentplayer.exist = 1;
-            currentplayer.new_sock = malloc(1);
             currentplayer.x = 2;
             currentplayer.y = 2;
 
@@ -229,13 +331,13 @@ int main(int argc, char * argv[])
             currentplayer.updatePeriod = atof(argv[2]);
             currentplayer.MY_PORT = atoi(argv[3]);
             currentplayer.seed = atoi(argv[4]);
-            *(currentplayer.new_sock) = snew;
+            currentplayer.new_sock = snew;
 
                     break;
                 }
             }
             ftime(&currentTime);
-
+            printf("thread ID %d",(int)thread1);
         	if( pthread_create( &thread1 , NULL ,  connection_handler , (void*)&currentplayer) < 0)
      		   {
             perror("could not create thread");
@@ -244,6 +346,7 @@ int main(int argc, char * argv[])
       		  }
 
         }
+        puts("ss");
 
         for (i = 0; i < max_clients; i++)
         {
@@ -261,6 +364,7 @@ int main(int argc, char * argv[])
                     //Close the socket and mark as 0 in list for reuse
                     close(sd);
                     client_socket[i] = 0;
+                    allplayers.players[i].exist = 0;
                 }
 
             }
@@ -271,5 +375,3 @@ int main(int argc, char * argv[])
 pthread_mutex_destroy(&lock);
  return 0;
 }
-
-

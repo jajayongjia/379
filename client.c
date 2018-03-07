@@ -37,12 +37,16 @@ struct playerPosition{
     double updatePeriod;
     int MY_PORT;
     int seed;
-    int *new_sock;
+    int new_sock;
     int id;
     int x;
     int y;
     char direction[2];
     char move;
+    int fire; // if fire == 1 -> draw o on screen
+    int o[4]; // contains x1,y1,x2,y2
+    int death; // 1 if this player is hit
+    int score; // 0 in default
 };
 struct allplayer{
     struct playerPosition players[30];
@@ -106,7 +110,7 @@ int main(int argc, char * argv[])
         refresh();
 	    if (a==0){
             ID = allplayers.currentIndex;
-            win = newwin(allplayers.players[0].boardsize,allplayers.players[0].boardsize,START_Y,START_X);
+            win = newwin(allplayers.players[0].boardsize+2,allplayers.players[0].boardsize+2,START_Y,START_X);
             refresh();
              updatep =(int) (allplayers.players[0].updatePeriod * 1000.0);
 //             updatep = 1000-50;
@@ -149,22 +153,34 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current){
 
 
 	mvwprintw(win,0,0,"+");
-	mvwprintw(win,0,player[0].boardsize-1,"+");
-	mvwprintw(win,player[0].boardsize-1,0,"+");
-	mvwprintw(win,player[0].boardsize-1,player[0].boardsize-1,"+");
+	mvwprintw(win,0,player[0].boardsize+1,"+");
+	mvwprintw(win,player[0].boardsize+1,0,"+");
+	mvwprintw(win,player[0].boardsize+1,player[0].boardsize+1,"+");
 	for(int i=0;i<30;i++){
         if (player[i].exist == 1){
 //        strcat(player[i].direction,"\0");
 
         // bool your char!!!
+         // if '>'
+         // mvwprintw ->
         /***************************************/
-		mvwprintw(win,player[i].y,player[i].x,player[i].direction);
-	}
-	}
-	//mvwprintw(win,player[current].y,player[current].x,player[current].direction);
-	wrefresh(win);
-}
+            mvwprintw(win,player[i].y,player[i].x,player[i].direction);
 
+            if(player[i].fire ==1 ){
+                for(int j = 0 ; j < 3;){
+                    if ((player[i].o[j] !=-1)&&(player[i].o[j+1] !=-1)){
+                        mvwprintw(win,player[i].o[j+1],player[i].o[j],"o");
+
+                        }
+                        j=j+2;
+            }
+
+        }
+	}
+    }	//mvwprintw(win,player[current].y,player[current].x,player[current].direction);
+	wrefresh(win);
+
+}
 
 char changePosition(WINDOW* win,int period){
 	keypad(win,true);
@@ -186,12 +202,13 @@ char changePosition(WINDOW* win,int period){
 		case KEY_RIGHT:
 			return '>';
 			break;
+		case ' ':
+            return 'f';
+
 	}
 
 
 
 }
-
-
 
 
