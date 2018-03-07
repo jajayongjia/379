@@ -94,15 +94,16 @@ int main(int argc, char * argv[])
 	cbreak();
     WINDOW *win;
     char move;
-//    struct timeb t_start,t_current,readtime;
+    struct timeb t_start,t_current,readtime;
 	while(1){
-        printw("s\n");
+
         refresh();
 
-		//printf("%d\n",allplayers->players[0].boardsize);
 
         struct playerPosition currentplayer;
         recv(s,&allplayers,sizeof(struct allplayer),0);
+
+        refresh();
 	    if (a==0){
             ID = allplayers.currentIndex;
             win = newwin(allplayers.players[0].boardsize,allplayers.players[0].boardsize,START_Y,START_X);
@@ -114,8 +115,25 @@ int main(int argc, char * argv[])
         a=1;
 		drawScreen(win,allplayers.players,ID);
 
-        move = '?';
-        move  = changePosition(win,updatep);
+        refresh();
+
+
+
+         char moves[5],i=0;
+         for (i=0;i<5;i++){
+            moves[i] = changePosition(win,updatep/5);
+         }
+
+         for (i = 4;i>=0;i--){
+            if(moves[i]!=-1){
+                move = moves[i];
+                break;
+            }
+            move = '?';
+         }
+        printw("%d\n", move);
+refresh();
+
 		send(s,&move,sizeof(char),0);
 	}
 	close (s);
@@ -136,7 +154,8 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current){
 	mvwprintw(win,player[0].boardsize-1,player[0].boardsize-1,"+");
 	for(int i=0;i<30;i++){
         if (player[i].exist == 1){
-        strcat(player[i].direction,"\0");
+//        strcat(player[i].direction,"\0");
+
         // bool your char!!!
         /***************************************/
 		mvwprintw(win,player[i].y,player[i].x,player[i].direction);
@@ -149,10 +168,7 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current){
 
 char changePosition(WINDOW* win,int period){
 	keypad(win,true);
-//    notimeout(win,true);
     wtimeout(win,period);
-//   printw("time left is %d\n",period);
-//        refresh();
 	int c = wgetch(win);
 	switch(c){
 		case KEY_UP:
@@ -171,9 +187,6 @@ char changePosition(WINDOW* win,int period){
 			return '>';
 			break;
 	}
-//	printw("1 %d \n",player->move);
-//	refresh();
-
 
 
 

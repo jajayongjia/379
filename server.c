@@ -55,8 +55,10 @@ void *connection_handler(void *player1)
     period =(int) (allplayers.players[0].updatePeriod * 1000.0);
 //    period = 1000;
 
+
     allplayers.currentIndex = nth;
 	while (1){
+//    printf("a%d",allplayers.players[1].id);
 
     ftime(&t_current);
     while ((int) (1000.0 * (t_current.time - t_start.time)
@@ -64,14 +66,12 @@ void *connection_handler(void *player1)
         ftime(&t_current);
         }
     t_start = t_current;
-
+//    printf("b%d",allplayers.players[1].id);
     allplayers.players[nth] = currentplayer;
     char move;
-        // for every 0.2 second
 
 
     send(sock,&allplayers,sizeof(struct allplayer),0);
-
     	// Now we receive from the client,
 
     recv(sock,&move,sizeof( char),0);
@@ -111,8 +111,8 @@ void *connection_handler(void *player1)
     }
 	}
 
-
-    pthread_exit("");
+//    printf("ss");
+//    pthread_exit("");
 
 }
 int main(int argc, char * argv[])
@@ -209,7 +209,6 @@ int main(int argc, char * argv[])
 
             pthread_t thread1;
             struct playerPosition currentplayer;
-          //  struct playerPosition *player1;
             //add new socket to array of sockets
             for (i = 0; i < max_clients; i++)
             {
@@ -260,17 +259,10 @@ int main(int argc, char * argv[])
                     printf("Host disconnected , ip %s , port %d \n" , inet_ntoa(master.sin_addr) , ntohs(master.sin_port));
 
                     //Close the socket and mark as 0 in list for reuse
-                    close( sd );
+                    close(sd);
                     client_socket[i] = 0;
                 }
 
-                // //Echo back the message that came in
-                // else
-                // {
-                //     //set the string terminating NULL byte on the end of the data read
-                //     buffer[valread] = '\0';
-                //     send(sd , buffer , strlen(buffer) , 0 );
-                // }
             }
         }
 
@@ -280,47 +272,4 @@ pthread_mutex_destroy(&lock);
  return 0;
 }
 
-
-
-//     struct playerPosition *player1;
-//     player1 = malloc(sizeof(struct playerPosition));
-//      player1->new_sock = malloc(1);
-//     player1->x = 2;
-//     player1->y = 2;
-//     strcpy(player1->direction,">");
-//     player1->move = '?';
-
-//     /*******************/
-//     while (snew = accept (sock, (struct sockaddr*) & from, & fromlength))
-//     {
-
-//         puts("Connection accepted");
-
-//         pthread_t thread1;
-//         *(player1->new_sock) = snew;
-
-//         if( pthread_create( &thread1 , NULL ,  connection_handler , (void*) player1) < 0)
-//         {
-//             perror("could not create thread");
-//             return 1;
-//         }
-
-//         //Now join the thread , so that we dont terminate before the thread
-//         //pthread_join( thread1 , NULL);
-//         puts("Handler assigned");
-//     }
-
-//     if (snew < 0)
-//     {
-//         perror("accept failed");
-//         return 1;
-//     }
-//     /*******************/
-
-
-
-
-
-// 	close (snew);
-// }
 
