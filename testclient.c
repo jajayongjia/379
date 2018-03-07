@@ -108,7 +108,7 @@ int main(int argc, char * argv[])
             win = newwin(allplayers.players[0].boardsize,allplayers.players[0].boardsize,START_Y,START_X);
             refresh();
              updatep =(int) (allplayers.players[0].updatePeriod * 1000.0);
-//             updatep = 1000-50;
+             updatep = 1000-50;
 
          }
         a=1;

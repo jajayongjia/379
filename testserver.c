@@ -53,7 +53,7 @@ void *connection_handler(void *player1)
     struct timeb now;
     int period;
     period =(int) (allplayers.players[0].updatePeriod * 1000.0);
-//    period = 1000;
+    period = 1000;
 
     allplayers.currentIndex = nth;
 	while (1){
