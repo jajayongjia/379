@@ -16,6 +16,7 @@
 #include <sys/timeb.h> //FD_SET, FD_ISSET, FD_ZERO macros
 #include <netinet/in.h>
 #include<pthread.h>
+#include <signal.h>
 #define START_Y 10
 #define START_X 10
 
@@ -33,19 +34,19 @@ struct playerPosition{
     char move;
     int fire; // if fire == 1 -> draw o on screen
     int o[4]; // contains x1,y1,x2,y2
-    int death; // 1 if this player is hit
     int score; // 0 in default
 };
 
 struct allplayer{
     struct playerPosition players[30];
     int currentIndex;
+    int death[30];
 };
 
-//pthread_mutex_t lock;
+pthread_mutex_t lock;
+pthread_mutex_t lock1;
 struct allplayer allplayers;
-//struct timeb currentTime;
-//struct timeb t_start,t_current,readtime;
+int num_client;
 void clearfireo(struct playerPosition * currentplayer){
     currentplayer->fire = 0;
 
@@ -68,23 +69,31 @@ void *connection_handler(void *player1)
     struct timeb now;
     int period,recvreturn;
     period =(int) (allplayers.players[0].updatePeriod * 1000.0);
-    printf("%d",period);
+
 
     allplayers.currentIndex = nth;
 	while (1){
 
 
 
-
     allplayers.players[nth] = currentplayer;
+
     char move;
 
-
+    pthread_mutex_lock(&lock1);
     send(sock,&allplayers,sizeof(struct allplayer),0);
+    pthread_mutex_unlock(&lock1);
     	// Now we receive from the client,
     usleep(period);
+
+
+    pthread_mutex_lock(&lock);
     recvreturn = recv(sock,&move,sizeof( char),0);
+    pthread_mutex_unlock(&lock);
+
     if((recvreturn == 0)||(recvreturn == -1) ){
+        allplayers.players[nth].exist = 0;
+        puts("Client Exit");
         pthread_exit("");
     }
 
@@ -92,6 +101,8 @@ void *connection_handler(void *player1)
         // the switch statment below should check all constraint of all the clients,
         // and do the update
  switch(move){
+//    case 'd':
+
         case '^':
 
             if(currentplayer.y > 1){
@@ -129,7 +140,7 @@ void *connection_handler(void *player1)
     // give o[4] to currentplayer
     // do check fire range is in boundary or not
     // also check if other clients current position is in o[4] or not
-    // if yes,  other_player.death = 1
+    // if yes,  currentplayer.death = id of the other player
     // currentplayer.score +=1
 
 
@@ -201,6 +212,20 @@ void *connection_handler(void *player1)
 
 
             }
+            // Here check whether bullet hit or not;
+            // death contains the id of other player;
+//            printf("bullet: %d,%d \t player1: %d %d\n",currentplayer.o[2],currentplayer.o[3],allplayers.players[0].x,allplayers.players[0].y);
+            for (int i=0;i<=num_client;i++){
+                    if (allplayers.players[i].exist == 1){
+                        if(((allplayers.players[i].x == currentplayer.o[0]) && (allplayers.players[i].y == currentplayer.o[1]))
+                           || ((allplayers.players[i].x == currentplayer.o[2]) && (allplayers.players[i].y == currentplayer.o[3]))){
+                                 allplayers.death[i]=1;
+                                 currentplayer.score++;
+//                                 printf("player %d is death %d",i,allplayers.players[i].death);
+                           }
+                    }
+            }
+
 
 
 
@@ -208,20 +233,29 @@ void *connection_handler(void *player1)
         default :
           clearfireo(&currentplayer);
     }
+
+
 	}
 
-//    puts("connection down");
+
 
 }
 int main(int argc, char * argv[])
 {
-  int	sock, snew, fromlength, number, outnum,num_client;
+  int	sock, snew, fromlength, number, outnum;
 
 	struct	sockaddr_in	master, from;
 
 
 	int i = 0;
-
+	for(i=0;i<30;i++){
+        allplayers.death[i] = -1;
+	}
+//        if (pthread_mutex_init(&lock, NULL) != 0)
+//    {
+//        printf("\n mutex init has failed\n");
+//        return 1;
+//}
 	sock = socket (AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
 		perror ("Server: cannot open master socket");
@@ -268,6 +302,9 @@ int main(int argc, char * argv[])
         currentplayer.MY_PORT = atoi(argv[3]);
         currentplayer.seed = atoi(argv[4]);
         currentplayer.new_sock = snew;
+        currentplayer.score = 0;
+
+//        printf("thread ID %lu\n",currentplayer.threadID);
 
         if( pthread_create( &sniffer_thread , NULL ,  connection_handler ,  (void*)&currentplayer) < 0)
         {

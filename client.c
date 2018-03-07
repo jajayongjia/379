@@ -45,16 +45,17 @@ struct playerPosition{
     char move;
     int fire; // if fire == 1 -> draw o on screen
     int o[4]; // contains x1,y1,x2,y2
-    int death; // 1 if this player is hit
     int score; // 0 in default
 };
+
 struct allplayer{
     struct playerPosition players[30];
     int currentIndex;
+    int death[30];
 };
 char changePosition(WINDOW* win,int period);
 
-void drawScreen(WINDOW* win,struct playerPosition player[30],int current);
+void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *move,int death[30]);
 
 
 int main(int argc, char * argv[])
@@ -98,6 +99,7 @@ int main(int argc, char * argv[])
 	cbreak();
     WINDOW *win;
     char move;
+    int recvValue;
     struct timeb t_start,t_current,readtime;
 	while(1){
 
@@ -105,7 +107,10 @@ int main(int argc, char * argv[])
 
 
         struct playerPosition currentplayer;
-        recv(s,&allplayers,sizeof(struct allplayer),0);
+        recvValue = recv(s,&allplayers,sizeof(struct allplayer),0);
+//        printw("%d",allplayers.death[0]);
+//        refresh();
+
 
 	    if (a==0){
             ID = allplayers.currentIndex;
@@ -116,10 +121,14 @@ int main(int argc, char * argv[])
 
          }
         a=1;
-		drawScreen(win,allplayers.players,ID);
-
+//        printw("%d",allplayers.players[ID].death);
+//        refresh();
+        move = ' ';
+		drawScreen(win,allplayers.players,ID,&move,allplayers.death);
+        if(move == 'd'){
+            goto end;
+        }
         refresh();
-
 
          char moves[5],i=0;
          for (i=0;i<5;i++){
@@ -138,10 +147,10 @@ int main(int argc, char * argv[])
 
 		send(s,&move,sizeof(char),0);
 	}
-	close (s);
+end: 	close (s);
 }
 
-void drawScreen(WINDOW* win,struct playerPosition player[30],int current){
+void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *move,int death[30]){
 	wclear(win);
 	char lr = '|';
 	char tb = '-';
@@ -163,7 +172,6 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current){
          // mvwprintw ->
         /***************************************/
             mvwprintw(win,player[i].y,player[i].x,player[i].direction);
-
             if(player[i].fire ==1 ){
                 for(int j = 0 ; j < 3;){
                     if ((player[i].o[j] !=-1)&&(player[i].o[j+1] !=-1)){
@@ -175,7 +183,13 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current){
 
         }
 	}
-    }	//mvwprintw(win,player[current].y,player[current].x,player[current].direction);
+    }
+    if(death[current]==1){
+        printw("Score : %d",player[current].score);
+        printw("You Lose!");
+        refresh();
+        *move = 'd';
+    }
 	wrefresh(win);
 
 }
