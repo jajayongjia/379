@@ -50,14 +50,24 @@ pthread_mutex_t lock;
 pthread_mutex_t lock1;
 struct allplayer allplayers;
 int num_client;
+
+void signalHandler(int signal){
+    if(signal = SIGTERM){
+        printf("BYEBYE\n");
+        exit(0);
+    }
+    else{
+        printf("catch a signal");
+    }
+
+}
+
 void clearfireo(struct playerPosition * currentplayer){
     currentplayer->fire = 0;
-
     currentplayer->o[0] = -1;
     currentplayer->o[1] = -1;
     currentplayer->o[2] = -1;
     currentplayer->o[3] = -1;
-
 
 }
 void *connection_handler(void *player1)
@@ -343,7 +353,7 @@ int main(int argc, char * argv[])
 
     //Listen
    listen (sock, 5);
-
+    signal(SIGTERM,signalHandler);
     //Accept and incoming connection
     puts("Waiting for incoming connections...");
     while(1)
