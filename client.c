@@ -12,6 +12,7 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <ncurses.h>
@@ -24,19 +25,11 @@
    the server need to run on the same machine.
    --------------------------------------------------------------------- */
 
-long long current_time() {
-    struct timeval t;
-   // gettimeofday(&t, NULL);
-    long long milliseconds = t.tv_sec*1000LL + t.tv_usec/1000;
-
-    return milliseconds;
-}
 struct playerPosition{
     int exist;
     int boardsize;
     double updatePeriod;
     int MY_PORT;
-    int seed;
     int new_sock;
     int id;
     int x;
@@ -61,10 +54,12 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *m
 int main(int argc, char * argv[])
 {
 
-	int	s, number;
+	int	s;
+//int number;
     struct allplayer allplayers;
 	struct	sockaddr_in	server;
-	int ID,n;
+	int ID;
+//int n;
 	int a=0;
 	int updatep;
 	struct	hostent		*host;
@@ -99,15 +94,16 @@ int main(int argc, char * argv[])
 	cbreak();
     WINDOW *win;
     char move;
-    int recvValue;
-    struct timeb t_start,t_current,readtime;
+    curs_set(0);
+    //int recvValue;
+    //struct timeb t_start,t_current,readtime;
 	while(1){
 
 
 
 
-        struct playerPosition currentplayer;
-        recvValue = recv(s,&allplayers,sizeof(struct allplayer),0);
+       // struct playerPosition currentplayer;
+        recv(s,&allplayers,sizeof(struct allplayer),0);
 //        printw("%d",allplayers.death[0]);
 //        refresh();
 
@@ -130,7 +126,8 @@ int main(int argc, char * argv[])
         }
         refresh();
 
-         char moves[5],i=0;
+         char moves[5];
+	 int i = 0;
          for (i=0;i<5;i++){
             moves[i] = changePosition(win,updatep/5);
          }
@@ -217,10 +214,11 @@ char changePosition(WINDOW* win,int period){
 		case ' ':
             return 'f';
 
-	}
 
+
+	}
+    return c;
 
 
 }
-
 

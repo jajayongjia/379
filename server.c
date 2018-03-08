@@ -5,8 +5,9 @@
  */
 // gcc client.c -o client -lncurses
 #include <stdio.h>
-#include <string.h>   //strlen
+#include <strings.h>   //strlen
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <unistd.h>   //close
 #include <arpa/inet.h>    //close
@@ -17,6 +18,8 @@
 #include <netinet/in.h>
 #include<pthread.h>
 #include <signal.h>
+#include <stdbool.h>
+#include <math.h>
 #define START_Y 10
 #define START_X 10
 
@@ -25,7 +28,7 @@ struct playerPosition{
     int boardsize;
     double updatePeriod;
     int MY_PORT;
-    int seed;
+
     int new_sock;
     int id;
     int x;
@@ -66,7 +69,7 @@ void *connection_handler(void *player1)
     int sock = currentplayer.new_sock;
 
 
-    struct timeb now;
+   // struct timeb now;
     int period,recvreturn;
     period =(int) (allplayers.players[0].updatePeriod * 1000.0);
 
@@ -101,38 +104,101 @@ void *connection_handler(void *player1)
         // the switch statment below should check all constraint of all the clients,
         // and do the update
  switch(move){
-//    case 'd':
-
+        // decide whether it can move
+        bool moveflag = false;
         case '^':
-
-            if(currentplayer.y > 1){
-                currentplayer.y-=1;
-                strcpy(currentplayer.direction,"^");
+            for (int i=0;i<=num_client;i++){
+                    if (allplayers.players[i].exist == 1){
+                            if(((allplayers.players[i].x == currentplayer.x)&&(allplayers.players[i].y == currentplayer.y-1))
+                            ||((allplayers.players[i].x == currentplayer.x-1)&&(allplayers.players[i].y == currentplayer.y-1)&&(allplayers.players[i].move=='>'))
+                            ||((allplayers.players[i].x == currentplayer.x+1)&&(allplayers.players[i].y == currentplayer.y-1)&&(allplayers.players[i].move=='<'))
+                            ||((allplayers.players[i].x == currentplayer.x)&&(allplayers.players[i].y == currentplayer.y-2)&&(allplayers.players[i].move=='v'  ))){
+                                moveflag = true;
+                                break;
+                            }
+                    }
             }
+            if(moveflag == true){
+                ;
+            }
+            else{
+                if(currentplayer.y > 1){
+                    currentplayer.y-=1;
+                    strcpy(currentplayer.direction,"^");
+                }
+            }
+            moveflag = false;
             clearfireo(&currentplayer);
             break;
         case 'v':
-
-            if((currentplayer.y) < (currentplayer.boardsize) ){
-                currentplayer.y+=1;
-                strcpy(currentplayer.direction,"v");
+             for (int i=0;i<=num_client;i++){
+                    if (allplayers.players[i].exist == 1){
+                            if(((allplayers.players[i].x == currentplayer.x)&&(allplayers.players[i].y == currentplayer.y+1))
+                            ||((allplayers.players[i].x == currentplayer.x-1)&&(allplayers.players[i].y == currentplayer.y+1)&&(allplayers.players[i].move=='>'))
+                            ||((allplayers.players[i].x == currentplayer.x+1)&&(allplayers.players[i].y == currentplayer.y+1)&&(allplayers.players[i].move=='<'))
+                            ||((allplayers.players[i].x == currentplayer.x)&&(allplayers.players[i].y == currentplayer.y+2)&&(allplayers.players[i].move=='v'  ))){
+                                moveflag = true;
+                                break;
+                            }
+                    }
+             }
+             if(moveflag == true){
+                ;
+             }
+             else{
+                if((currentplayer.y) < (currentplayer.boardsize) ){
+                    currentplayer.y+=1;
+                    strcpy(currentplayer.direction,"v");
+                }
             }
+            moveflag = false;
             clearfireo(&currentplayer);
             break;
         case '<':
-
-            if(currentplayer.x > 1){
-                currentplayer.x-=1;
-                strcpy(currentplayer.direction,"<");
-            }
+             for (int i=0;i<=num_client;i++){
+                    if (allplayers.players[i].exist == 1){
+                            if(((allplayers.players[i].x == currentplayer.x-1)&&(allplayers.players[i].y == currentplayer.y))
+                            ||((allplayers.players[i].x == currentplayer.x-1)&&(allplayers.players[i].y == currentplayer.y+1)&&(allplayers.players[i].move=='^'))
+                            ||((allplayers.players[i].x == currentplayer.x-2)&&(allplayers.players[i].y == currentplayer.y)&&(allplayers.players[i].move=='>'))
+                            ||((allplayers.players[i].x == currentplayer.x-1)&&(allplayers.players[i].y == currentplayer.y-1)&&(allplayers.players[i].move=='v'  ))){
+                                moveflag = true;
+                                break;
+                            }
+                    }
+             }
+             if(moveflag == true){
+                ;
+             }
+             else{
+                if(currentplayer.x > 1){
+                    currentplayer.x-=1;
+                    strcpy(currentplayer.direction,"<");
+                }
+             }
+            moveflag = false;
             clearfireo(&currentplayer);
             break;
         case '>':
-
-            if((currentplayer.x) < (currentplayer.boardsize)){
-                currentplayer.x+=1;
-                strcpy(currentplayer.direction,">");
-            }
+             for (int i=0;i<=num_client;i++){
+                    if (allplayers.players[i].exist == 1){
+                            if(((allplayers.players[i].x == currentplayer.x+1)&&(allplayers.players[i].y == currentplayer.y))
+                            ||((allplayers.players[i].x == currentplayer.x+1)&&(allplayers.players[i].y == currentplayer.y+1)&&(allplayers.players[i].move=='^'))
+                            ||((allplayers.players[i].x == currentplayer.x+2)&&(allplayers.players[i].y == currentplayer.y)&&(allplayers.players[i].move=='<'))
+                            ||((allplayers.players[i].x == currentplayer.x+1)&&(allplayers.players[i].y == currentplayer.y-1)&&(allplayers.players[i].move=='v' ) )){
+                                moveflag = true;
+                                break;
+                            }
+                    }
+             }
+             if(moveflag == true){
+                ;
+             }
+             else{
+                if((currentplayer.x) < (currentplayer.boardsize)){
+                    currentplayer.x+=1;
+                    strcpy(currentplayer.direction,">");
+                }
+             }
             clearfireo(&currentplayer);
             break;
 
@@ -242,8 +308,9 @@ void *connection_handler(void *player1)
 }
 int main(int argc, char * argv[])
 {
-  int	sock, snew, fromlength, number, outnum;
-
+  int	sock, snew;
+  socklen_t fromlength;
+// int outnum,number
 	struct	sockaddr_in	master, from;
 
 
@@ -265,7 +332,8 @@ int main(int argc, char * argv[])
 	master.sin_family = AF_INET;
 	master.sin_addr.s_addr = inet_addr("127.0.0.1");
 	master.sin_port = htons (atoi(argv[3]));
-
+	int seed = atoi(argv[4]);
+	srand(seed);
 	if (bind (sock, (struct sockaddr*) &master, sizeof (master))) {
 		perror ("Server: cannot bind master socket");
 		exit (1);
@@ -280,7 +348,7 @@ int main(int argc, char * argv[])
     puts("Waiting for incoming connections...");
     while(1)
     {
-        if (( snew = accept (sock, (struct sockaddr*) & from, & fromlength)) < 0)
+        if (( snew = accept (sock, (struct sockaddr*) &from, &fromlength)) < 0)
         {
             perror("accept failed\n");
             exit(1);
@@ -292,15 +360,17 @@ int main(int argc, char * argv[])
         pthread_t sniffer_thread;
         currentplayer.id = num_client;
         currentplayer.exist = 1;
-        currentplayer.x = 2;
-        currentplayer.y = 2;
+        int rand_value1 = ceil((float)rand()/RAND_MAX * 16);
+	int rand_value2 = ceil((float)rand()/RAND_MAX * 16);
+        currentplayer.x = rand_value1;
+        currentplayer.y = rand_value2;
 
         strcpy(currentplayer.direction,">");
         currentplayer.move = '?';
         currentplayer.boardsize = atoi(argv[1]);
         currentplayer.updatePeriod = atof(argv[2]);
         currentplayer.MY_PORT = atoi(argv[3]);
-        currentplayer.seed = atoi(argv[4]);
+
         currentplayer.new_sock = snew;
         currentplayer.score = 0;
 
@@ -323,7 +393,6 @@ int main(int argc, char * argv[])
 
     return 0;
 }
-
 
 
 
