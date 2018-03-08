@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -std=c99 -Wall
 
 all:
-	$(CC) $(CFLAGS) -o gameserver379 server.c -lpthread -lm 
+	$(CC) -o gameserver379 server.c -lpthread -lm
 	$(CC) $(CFLAGS) -o gameclient379 client.c -lncurses
 
 clean:

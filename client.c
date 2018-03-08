@@ -26,25 +26,27 @@
    --------------------------------------------------------------------- */
 
 struct playerPosition{
-    int exist;
-    int boardsize;
-    double updatePeriod;
-    int MY_PORT;
-    int new_sock;
-    int id;
-    int x;
-    int y;
-    char direction[2];
-    char move;
+    int exist;    // 1 if this player is enabled
+    int boardsize;  // user input boardsize
+    double updatePeriod; // user input updateperiod
+    int MY_PORT;    // user input my_port
+    int new_sock;   // sock id
+    int id;          // player id
+    int x;           // player position x
+    int y;            // player position y
+    char direction[2];  // player direction
+    char move;          // player's input
     int fire; // if fire == 1 -> draw o on screen
     int o[4]; // contains x1,y1,x2,y2
     int score; // 0 in default
 };
 
+
+// This structure is the message pass from server to clients
 struct allplayer{
-    struct playerPosition players[30];
-    int currentIndex;
-    int death[30];
+    struct playerPosition players[30];  // contains 30 clients, Max number of client is 30
+    int currentIndex;                   // whenever a message is passed to client, it will tell its client its ID
+    int death[30];                      // death contains which client  is dead
 };
 char changePosition(WINDOW* win,int period);
 
@@ -139,7 +141,10 @@ int main(int argc, char * argv[])
 
 		send(s,&move,sizeof(char),0);
 	}
-end: 	close (s);
+end:
+    close (s);
+    sleep(2);
+     endwin();
 }
 
 void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *move,int death[30]){
@@ -174,8 +179,11 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *m
     if(death[current]==1){
         wclear(win);
         printw("Score : %d",player[current].score);
-        printw("You Lose!");
+        printw("You Lose!\n");
         refresh();
+        printw("Wait 2 Seconds to exit\n");
+        refresh();
+//        sleep(2);
         *move = 'd';
     }
 	wrefresh(win);
