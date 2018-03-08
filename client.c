@@ -120,6 +120,7 @@ int main(int argc, char * argv[])
 	    if (a==0){
             ID = allplayers.currentIndex;
             win = newwin(allplayers.players[ID].boardsize+2,allplayers.players[ID].boardsize+2,START_Y,START_X);
+              waddch(win,A_BOLD);
             refresh();
              updatep =(int) (allplayers.players[ID].updatePeriod * 1000.0);
          }
@@ -143,7 +144,7 @@ int main(int argc, char * argv[])
          }
 
  	     // get the latest user valid input
- 	     // if no valid input provided, return '?' instead 
+ 	     // if no valid input provided, return '?' instead
          for (i = 4;i>=0;i--){
             if(moves[i]!=-1){
                 move = moves[i];
@@ -153,7 +154,7 @@ int main(int argc, char * argv[])
          }
 
 
-         // handle death 
+         // handle death
         if (move == 'd'){
                 allplayers.death[ID] = 1;
                 drawScreen(win,allplayers.players,ID,&move,allplayers.death);
@@ -179,6 +180,7 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *m
 	refresh();
 	wrefresh(win);
 
+    refresh();
 
 	mvwprintw(win,0,0,"+");
 	mvwprintw(win,0,player[0].boardsize+1,"+");
@@ -188,6 +190,7 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *m
         if (player[i].exist == 1){
 
             mvwprintw(win,player[i].y,player[i].x,player[i].direction);
+
             if(player[i].fire ==1 ){
                 for(int j = 0 ; j < 3;){
                     if ((player[i].o[j] !=-1)&&(player[i].o[j+1] !=-1)){
@@ -200,6 +203,7 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *m
         }
 	}
     }
+//     attroff(A_BOLD);
 
     //print information after the player is dead
     if(death[current]==1){
