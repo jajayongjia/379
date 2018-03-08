@@ -10,7 +10,7 @@ README.md
 ---------------------
 General usage notes:
 ---------------------
-This is a socket server - mult client program using pthread
+This is a socket server - multi client program using pthread
 Game interface:
 +-------------------+
 |                   |
@@ -37,25 +37,32 @@ Good Luck!
 How to run?
 --------------
 command: make
-command: 
-where path is the absolute or relative path to the directory to monitor,and period is the reporting period in seconds.
-Open another terminal to send the process a SIGUSR1 Unix Signal.
-command: ps -aux | grep diffdir379 
-to get the process id of the program and
-command: kill -10 process id
-to send SIGUSR1 Unix Signal.
+
+server side:
+command: ./gameserver379 16 0.2 8989 1547543314
+where the first parameter is the dimension of the square grid (16 means a 16x16 grid), followed by the update period (in seconds) the server uses to periodically send the game state to all clients (0.2 meaning a fifth of a second in this example),
+followed by the port on which theserver should belistening (8989 in this example) and the last number is the "seed" for the random number generator (1547543314 in this example)
+
+client side:
+command: ./gameclient379 127.0.0.1 8989
+where the first parameter is the hostname OR the IP address of the host on which the server is running and the second is the port number where the server listens. 
+
+command: ps -aux | grep gameserver379 
+to get the process id of the server and
+command: kill -15 process id
+to send SIGTERM Unix Signal to terminate the server
 
 -------------------
 Division of labour:
 -------------------
-Yongjia Huang contributes to dealing with files and printing the output.
-Yuhan Ye contributes to dealing with time,signal handling,Makefile and README.
-We work together to test the program and debug.
+Yongjia Huang contributes to most server side and part of client side
+Yuhan Ye contributes to most client side and part server side and Makefile.
+We work together to test the program,debug comment and write the README file.
 The code was tested on VM(XubuntuCS.08.2015-06.2014 CMPUT174)
 
 ----------------------------
 Design Issues and Questions:
-
+----------------------------
 Q:How do you ensure that input response time(keystrokeread, transmission of command, receiving at the server) is minimized?
 A:Send and receive information as fewer as possible to reduce the transmission time
 and minimize time between receive and send at server side.
