@@ -95,17 +95,11 @@ int main(int argc, char * argv[])
     WINDOW *win;
     char move;
     curs_set(0);
-    //int recvValue;
-    //struct timeb t_start,t_current,readtime;
 	while(1){
 
 
-
-
-       // struct playerPosition currentplayer;
         recv(s,&allplayers,sizeof(struct allplayer),0);
-//        printw("%d",allplayers.death[0]);
-//        refresh();
+
 
 
 	    if (a==0){
@@ -117,8 +111,6 @@ int main(int argc, char * argv[])
 
          }
         a=1;
-//        printw("%d",allplayers.players[ID].death);
-//        refresh();
         move = ' ';
 		drawScreen(win,allplayers.players,ID,&move,allplayers.death);
         if(move == 'd'){
@@ -180,6 +172,7 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *m
 	}
     }
     if(death[current]==1){
+        wclear(win);
         printw("Score : %d",player[current].score);
         printw("You Lose!");
         refresh();
@@ -192,7 +185,7 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *m
 char changePosition(WINDOW* win,int period){
 	keypad(win,true);
     wtimeout(win,period);
-
+    noecho();
 	int c = wgetch(win);
 	switch(c){
 		case 'i':
