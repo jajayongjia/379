@@ -3,7 +3,6 @@
  * You may use distribut, or modify this code under terms and conditions of the ode of Student Behavior at University of Alberta
  * You may find a copy of the license in this project. Otherwise please contact jajayongjia@gmail.com
  */
-// gcc client.c -o client -lncurses
 #include <stdio.h>
 #include <strings.h>   //strlen
 #include <stdlib.h>
@@ -24,33 +23,35 @@
 #define START_X 10
 
 struct playerPosition{
-    int exist;
-    int boardsize;
-    double updatePeriod;
-    int MY_PORT;
-
-    int new_sock;
-    int id;
-    int x;
-    int y;
-    char direction[2];
-    char move;
+    int exist;    // 1 if this player is enabled
+    int boardsize;  // user input boardsize
+    double updatePeriod; // user input updateperiod
+    int MY_PORT;    // user input my_port
+    int new_sock;   // sock id
+    int id;          // player id
+    int x;           // player position x
+    int y;            // player position y
+    char direction[2];  // player direction
+    char move;          // player's input
     int fire; // if fire == 1 -> draw o on screen
     int o[4]; // contains x1,y1,x2,y2
     int score; // 0 in default
 };
 
-struct allplayer{
-    struct playerPosition players[30];
-    int currentIndex;
-    int death[30];
-};
 
+// This structure is the message pass from server to clients
+struct allplayer{
+    struct playerPosition players[30];  // contains 30 clients, Max number of client is 30
+    int currentIndex;                   // whenever a message is passed to client, it will tell its client its ID
+    int death[30];                      // death contains which client  is dead
+};
 pthread_mutex_t lock;
 pthread_mutex_t lock1;
 struct allplayer allplayers;
 int num_client;
 
+// this function provides signal handling
+// exit if the server receives SIGTERM
 void signalHandler(int signal){
     if(signal = SIGTERM){
         printf("BYEBYE\n");
@@ -62,14 +63,15 @@ void signalHandler(int signal){
 
 }
 
+//this function clear and initialize the fire information of the current player
 void clearfireo(struct playerPosition * currentplayer){
     currentplayer->fire = 0;
     currentplayer->o[0] = -1;
     currentplayer->o[1] = -1;
     currentplayer->o[2] = -1;
     currentplayer->o[3] = -1;
-
 }
+
 void *connection_handler(void *player1)
 {
     //Get the socket descriptor
@@ -77,33 +79,31 @@ void *connection_handler(void *player1)
     currentplayer = *(struct playerPosition *)player1;
     int nth = currentplayer.id;
     int sock = currentplayer.new_sock;
-
-
-   // struct timeb now;
     int period,recvreturn;
-    period =(int) (allplayers.players[0].updatePeriod * 1000.0);
+    period =(int) (allplayers.players[nth].updatePeriod * 1000.0);
 
 
     allplayers.currentIndex = nth;
-	while (1){
 
 
-
+    /*Each Client thread enters a continuely conversion loop */
+    while (1){
     allplayers.players[nth] = currentplayer;
 
     char move;
 
+    // send data to client
     pthread_mutex_lock(&lock1);
     send(sock,&allplayers,sizeof(struct allplayer),0);
     pthread_mutex_unlock(&lock1);
-    	// Now we receive from the client,
     usleep(period);
 
-
+    // Now we receive from the client,
     pthread_mutex_lock(&lock);
     recvreturn = recv(sock,&move,sizeof( char),0);
     pthread_mutex_unlock(&lock);
 
+    // if a client is disconnected
     if((recvreturn == 0)||(recvreturn == -1) ){
         allplayers.players[nth].exist = 0;
         puts("Client Exit");
@@ -111,9 +111,9 @@ void *connection_handler(void *player1)
     }
 
 
-        // the switch statment below should check all constraint of all the clients,
-        // and do the update
- switch(move){
+    // the switch statment below should check all constraint of all the clients,
+    // and do the update
+     switch(move){
         // decide whether it can move
         bool moveflag = false;
         case '^':
@@ -212,14 +212,13 @@ void *connection_handler(void *player1)
             clearfireo(&currentplayer);
             break;
 
+
     // enable currentplayer.fire ( =1);
-    // give o[4] to currentplayer
+    // give o[4] to currentplayer o[4] contains two bullet position, [x1,y1,x2,y2]
     // do check fire range is in boundary or not
     // also check if other clients current position is in o[4] or not
-    // if yes,  currentplayer.death = id of the other player
+    // if yes,  death[id] = 1 where id is the id of the died player
     // currentplayer.score +=1
-
-
         case 'f':
             currentplayer.fire = 1;
             switch(currentplayer.direction[0]){
@@ -290,14 +289,12 @@ void *connection_handler(void *player1)
             }
             // Here check whether bullet hit or not;
             // death contains the id of other player;
-//            printf("bullet: %d,%d \t player1: %d %d\n",currentplayer.o[2],currentplayer.o[3],allplayers.players[0].x,allplayers.players[0].y);
             for (int i=0;i<=num_client;i++){
                     if (allplayers.players[i].exist == 1){
                         if(((allplayers.players[i].x == currentplayer.o[0]) && (allplayers.players[i].y == currentplayer.o[1]))
                            || ((allplayers.players[i].x == currentplayer.o[2]) && (allplayers.players[i].y == currentplayer.o[3]))){
                                  allplayers.death[i]=1;
                                  currentplayer.score++;
-//                                 printf("player %d is death %d",i,allplayers.players[i].death);
                            }
                     }
             }
@@ -311,43 +308,37 @@ void *connection_handler(void *player1)
     }
 
 
-	}
+    }
 
 
 
 }
 int main(int argc, char * argv[])
 {
-  int	sock, snew;
+  int   sock, snew;
   socklen_t fromlength;
-// int outnum,number
-	struct	sockaddr_in	master, from;
+    struct  sockaddr_in master, from;
 
 
-	int i = 0;
-	for(i=0;i<30;i++){
+    int i = 0;
+    for(i=0;i<30;i++){
         allplayers.death[i] = -1;
-	}
-//        if (pthread_mutex_init(&lock, NULL) != 0)
-//    {
-//        printf("\n mutex init has failed\n");
-//        return 1;
-//}
-	sock = socket (AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) {
-		perror ("Server: cannot open master socket");
-		exit (1);
-	}
+    }
+    sock = socket (AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        perror ("Server: cannot open master socket");
+        exit (1);
+    }
 
-	master.sin_family = AF_INET;
-	master.sin_addr.s_addr = inet_addr("127.0.0.1");
-	master.sin_port = htons (atoi(argv[3]));
-	int seed = atoi(argv[4]);
-	srand(seed);
-	if (bind (sock, (struct sockaddr*) &master, sizeof (master))) {
-		perror ("Server: cannot bind master socket");
-		exit (1);
-	}
+    master.sin_family = AF_INET;
+    master.sin_addr.s_addr = inet_addr("127.0.0.1");
+    master.sin_port = htons (atoi(argv[3]));
+    int seed = atoi(argv[4]);
+    srand(seed);
+    if (bind (sock, (struct sockaddr*) &master, sizeof (master))) {
+        perror ("Server: cannot bind master socket");
+        exit (1);
+    }
 
     puts("bind done");
 
@@ -366,12 +357,14 @@ int main(int argc, char * argv[])
         puts("Connection accepted");
         //Reply to the client
 
+
+        // init the player information
         struct playerPosition currentplayer;
         pthread_t sniffer_thread;
         currentplayer.id = num_client;
         currentplayer.exist = 1;
         int rand_value1 = ceil((float)rand()/RAND_MAX * 16);
-	int rand_value2 = ceil((float)rand()/RAND_MAX * 16);
+    int rand_value2 = ceil((float)rand()/RAND_MAX * 16);
         currentplayer.x = rand_value1;
         currentplayer.y = rand_value2;
 
@@ -384,7 +377,6 @@ int main(int argc, char * argv[])
         currentplayer.new_sock = snew;
         currentplayer.score = 0;
 
-//        printf("thread ID %lu\n",currentplayer.threadID);
 
         if( pthread_create( &sniffer_thread , NULL ,  connection_handler ,  (void*)&currentplayer) < 0)
         {
@@ -392,18 +384,10 @@ int main(int argc, char * argv[])
             return 1;
         }
         num_client++;
-        puts("process end \n");
 
-        //Now join the thread , so that we dont terminate before the thread
-        //pthread_join( sniffer_thread , NULL);
-//        puts("Handler assigned");
     }
 
 
 
     return 0;
 }
-
-
-
-
