@@ -139,8 +139,11 @@ int main(int argc, char * argv[])
             }
             move = '?';
          }
-//        printw("%d\n", move);
-//refresh();
+        if (move == 'd'){
+                allplayers.death[ID] = 1;
+                drawScreen(win,allplayers.players,ID,&move,allplayers.death);
+                    goto end;
+        }
 
 		send(s,&move,sizeof(char),0);
 	}
@@ -162,12 +165,7 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *m
 	mvwprintw(win,player[0].boardsize+1,player[0].boardsize+1,"+");
 	for(int i=0;i<30;i++){
         if (player[i].exist == 1){
-//        strcat(player[i].direction,"\0");
 
-        // bool your char!!!
-         // if '>'
-         // mvwprintw ->
-        /***************************************/
             mvwprintw(win,player[i].y,player[i].x,player[i].direction);
             if(player[i].fire ==1 ){
                 for(int j = 0 ; j < 3;){
@@ -194,30 +192,37 @@ void drawScreen(WINDOW* win,struct playerPosition player[30],int current,char *m
 char changePosition(WINDOW* win,int period){
 	keypad(win,true);
     wtimeout(win,period);
+
 	int c = wgetch(win);
 	switch(c){
-		case KEY_UP:
+		case 'i':
 			return '^';
 
 			break;
-		case KEY_DOWN:
+		case 'k':
 
 			return 'v';
 			break;
-		case KEY_LEFT:
+		case 'j':
 
 			return '<';
 			break;
-		case KEY_RIGHT:
+		case 'l':
 			return '>';
 			break;
 		case ' ':
             return 'f';
+            break;
+        case 'x':
+            return 'd';
+            break;
+        default:
+            return -1;
+            break;
 
 
 
 	}
-    return c;
 
 
 }

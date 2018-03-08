@@ -365,7 +365,7 @@ int main(int argc, char * argv[])
         currentplayer.x = rand_value1;
         currentplayer.y = rand_value2;
 
-        strcpy(currentplayer.direction,">");
+        strcpy(currentplayer.direction,"^");
         currentplayer.move = '?';
         currentplayer.boardsize = atoi(argv[1]);
         currentplayer.updatePeriod = atof(argv[2]);
